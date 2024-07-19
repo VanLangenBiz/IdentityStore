@@ -1,0 +1,6 @@
+@PWRIdentity_HostAddress = http://localhost:5012
+
+GET {{PWRIdentity_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
