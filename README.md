@@ -9,7 +9,7 @@ Work in progress....
 - dotnet ef database update
 
 ## Add these to your secrets.json
--  "Issuer": "<issuer>",
--  "Audience": "<audience>",
--  "RSA:PrivateKey": "<privatekey>",
--  "RSA:PublicKey": "<publickey>"
+-  "Issuer": "[issuer]",
+-  "Audience": "[audience]",
+-  "RSA:PrivateKey": "[privatekey]",
+-  "RSA:PublicKey": "[publickey]"
