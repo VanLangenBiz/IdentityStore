@@ -42,8 +42,8 @@ namespace IdentityStore
                 // Print de sleutels naar de console (of sla ze op in bestanden)
                 Console.WriteLine("Store these keys in the User Secrets");
                 Console.WriteLine();
-                Console.WriteLine($"\"RSA:PrivateKey\": \"{privateKey}\",");
-                Console.WriteLine($"\"RSA:PublicKey\": \"{publicKey}\"");
+                Console.WriteLine($"\"Jwt:PrivateKey\": \"{privateKey}\",");
+                Console.WriteLine($"\"Jwt:PublicKey\": \"{publicKey}\"");
                 Console.WriteLine();
             }
         }
@@ -70,8 +70,8 @@ namespace IdentityStore
             // Voeg rolbeheer service toe
             builder.Services.AddScoped<IRoleManagementService, RoleManagementService>();
 
-            var privateKeyBase64 = builder.Configuration["RSA:PrivateKey"] ?? throw new InvalidDataException("PrivateKey not found in configuration");
-            var publicKeyBase64 = builder.Configuration["RSA:PublicKey"] ?? throw new InvalidDataException("PublicKey not found in configuration");
+            var privateKeyBase64 = builder.Configuration["Jwt:PrivateKey"] ?? throw new InvalidDataException("Jwt:PrivateKey not found in configuration");
+            var publicKeyBase64 = builder.Configuration["Jwt:PublicKey"] ?? throw new InvalidDataException("Jwt:PublicKey not found in configuration");
 
             // Converteer de Base64-strings naar byte-arrays
             var privateKeyBytes = Convert.FromBase64String(privateKeyBase64);
@@ -96,7 +96,7 @@ namespace IdentityStore
                     ValidateLifetime = true,
                     ValidateIssuerSigningKey = true,
                     ValidIssuer = builder.Configuration["Jwt:Issuer"],
-                    ValidAudience = builder.Configuration["Jwt:Issuer"],
+                    ValidAudience = builder.Configuration["Jwt:Audience"],
                     IssuerSigningKey = new RsaSecurityKey(rsa), // Public key voor validatie
                 };
             });

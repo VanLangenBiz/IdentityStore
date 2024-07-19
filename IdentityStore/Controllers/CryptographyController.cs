@@ -21,12 +21,12 @@ namespace IdentityStore.Controllers
         [HttpPost("publickey")]
         public async Task<IActionResult> GetPublicKey()
         {
-            var publickey = _configuration["RSA:PublicKey"];
+            var publickey = _configuration["Jwt:PublicKey"];
 
             if (publickey != null)
                 return Ok(publickey);
             else
-                return StatusCode(500, "Configuration error, public-key was not set in the configuration.");
+                return StatusCode(500, "Configuration error, Jwt:PublicKey was not set in the configuration.");
         }
     }
 }

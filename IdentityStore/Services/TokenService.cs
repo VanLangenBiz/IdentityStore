@@ -22,9 +22,9 @@
         {
             var tokenHandler = new JwtSecurityTokenHandler();
 
-            var issuer = _configuration["Issuer"] ?? throw new InvalidDataException("Issuer not found in configuration");
-            var audience = _configuration["Audience"] ?? throw new InvalidDataException("Audience not found in configuration");
-            var privateKeyBase64 = _configuration["RSA:PrivateKey"] ?? throw new InvalidDataException("PrivateKey not found in configuration");
+            var issuer = _configuration["Jwt:Issuer"] ?? throw new InvalidDataException("Issuer not found in configuration");
+            var audience = _configuration["Jwt:Audience"] ?? throw new InvalidDataException("Audience not found in configuration");
+            var privateKeyBase64 = _configuration["Jwt:PrivateKey"] ?? throw new InvalidDataException("PrivateKey not found in configuration");
             var privateKeyBytes = Convert.FromBase64String(privateKeyBase64);
 
             var rsa = RSA.Create();
