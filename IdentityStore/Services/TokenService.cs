@@ -47,5 +47,55 @@
             var token = tokenHandler.CreateToken(tokenDescriptor);
             return tokenHandler.WriteToken(token);
         }
+
+        public TokenValidationResult ValidateToken(string token, out ClaimsPrincipal claimsPrincipal)
+        {
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var publicKey = Convert.FromBase64String(Environment.GetEnvironmentVariable("Jwt:PublicKey"));
+
+            var rsa = RSA.Create();
+            rsa.ImportRSAPublicKey(publicKey, out _);
+
+            var validationParameters = new TokenValidationParameters
+            {
+                ValidateIssuer = true,
+                ValidateAudience = true,
+                ValidateLifetime = true,
+                ValidateIssuerSigningKey = true,
+                ValidIssuer = _configuration["Jwt:Issuer"],
+                ValidAudience = _configuration["Jwt:Issuer"],
+                IssuerSigningKey = new RsaSecurityKey(rsa)
+            };
+
+            claimsPrincipal = null;
+            SecurityToken validatedToken;
+
+            try
+            {
+                claimsPrincipal = tokenHandler.ValidateToken(token, validationParameters, out validatedToken);
+                return TokenValidationResult.Valid;
+            }
+            catch (SecurityTokenExpiredException)
+            {
+                return TokenValidationResult.Expired;
+            }
+            catch (SecurityTokenInvalidSignatureException)
+            {
+                return TokenValidationResult.InvalidSignature;
+            }
+            catch (SecurityTokenInvalidIssuerException)
+            {
+                return TokenValidationResult.InvalidIssuer;
+            }
+            catch (SecurityTokenInvalidAudienceException)
+            {
+                return TokenValidationResult.InvalidAudience;
+            }
+            catch
+            {
+                return TokenValidationResult.OtherError;
+            }
+        }
+
     }
 }
