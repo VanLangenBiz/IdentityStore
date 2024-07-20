@@ -70,8 +70,8 @@ namespace IdentityStore
             // Voeg rolbeheer service toe
             builder.Services.AddScoped<IRoleManagementService, RoleManagementService>();
 
-            var privateKeyBase64 = builder.Configuration["Jwt:PrivateKey"] ?? throw new InvalidDataException("Jwt:PrivateKey not found in configuration");
-            var publicKeyBase64 = builder.Configuration["Jwt:PublicKey"] ?? throw new InvalidDataException("Jwt:PublicKey not found in configuration");
+            var privateKeyBase64 = builder.Configuration["Jwt:PrivateKey"] ?? throw new InvalidDataException("Jwt:PrivateKey not found in configuration. Add themto the secrets.json.");
+            var publicKeyBase64 = builder.Configuration["Jwt:PublicKey"] ?? throw new InvalidDataException("Jwt:PublicKey not found in configuration. Add themto the secrets.json.");
 
             // Converteer de Base64-strings naar byte-arrays
             var privateKeyBytes = Convert.FromBase64String(privateKeyBase64);
