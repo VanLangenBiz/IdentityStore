@@ -4,7 +4,7 @@ Work in progress....
 
 
 ## Create an empty database (SQLite database)
-
+- dotnet tool install --global dotnet-ef
 - dotnet ef migrations add InitialCreate
 - dotnet ef database update
 
