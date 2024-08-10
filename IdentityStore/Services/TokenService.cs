@@ -4,6 +4,7 @@
     using Microsoft.Extensions.Configuration;
     using Microsoft.IdentityModel.Tokens;
     using System;
+    using System.Diagnostics.CodeAnalysis;
     using System.IdentityModel.Tokens.Jwt;
     using System.Security.Claims;
     using System.Security.Cryptography;
@@ -48,13 +49,15 @@
             return tokenHandler.WriteToken(token);
         }
 
-        public TokenValidationResult ValidateToken(string token, out ClaimsPrincipal claimsPrincipal)
+        public TokenValidationResult ValidateToken(string token, [MaybeNullWhen(false)] out ClaimsPrincipal claimsPrincipal)
         {
+            var publicKey = _configuration["Jwt:PublicKey"] ?? throw new ArgumentNullException("'Jwt:PublicKey' configuration not found. Update your secrets.json.")
+                var publicKeyBytes = Convert.FromBase64String(publicKey);
+
             var tokenHandler = new JwtSecurityTokenHandler();
-            var publicKey = Convert.FromBase64String(Environment.GetEnvironmentVariable("Jwt:PublicKey"));
 
             var rsa = RSA.Create();
-            rsa.ImportRSAPublicKey(publicKey, out _);
+            rsa.ImportRSAPublicKey(publicKeyBytes, out _);
 
             var validationParameters = new TokenValidationParameters
             {
@@ -63,7 +66,7 @@
                 ValidateLifetime = true,
                 ValidateIssuerSigningKey = true,
                 ValidIssuer = _configuration["Jwt:Issuer"],
-                ValidAudience = _configuration["Jwt:Issuer"],
+                ValidAudience = _configuration["Jwt:Audience"],
                 IssuerSigningKey = new RsaSecurityKey(rsa)
             };
 
