@@ -14,6 +14,7 @@
         Task<bool> RemoveUserFromRoleAsync(string userId, string role);
         Task<ApplicationUser?> FindUserByName(string username);
         Task<bool> CreateRole(string role);
+        Task<bool> DeleteRole(string role);
     }
 
     public class RoleManagementService : IRoleManagementService
@@ -68,6 +69,17 @@
             {
                 Name = role
             });
+
+            return result.Succeeded;
+        }
+
+        public async Task<bool> DeleteRole(string role)
+        {
+            var identityRole = await _roleManager.FindByNameAsync(role);
+            if (identityRole == null)
+                return false;
+
+            var result = await _roleManager.DeleteAsync(identityRole);
 
             return result.Succeeded;
         }

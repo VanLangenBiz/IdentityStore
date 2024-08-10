@@ -91,6 +91,21 @@
             }
         }
 
+        [HttpPost("deleteRole")]
+        public async Task<IActionResult> DeleteRole(string role)
+        {
+            var result = await _roleManagementService.DeleteRole(role);
+
+            if (result)
+            {
+                return Ok("Role deleted");
+            }
+            else
+            {
+                return BadRequest($"Role not found");
+            }
+        }
+
 
         [HttpPost("addUserToRole")]
         public async Task<IActionResult> AddUserToRole(AddUserToRoleDto model)
