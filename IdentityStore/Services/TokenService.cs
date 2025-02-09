@@ -14,10 +14,8 @@
     {
         private readonly IConfiguration _configuration;
 
-        public TokenService(IConfiguration configuration)
-        {
+        public TokenService(IConfiguration configuration) => 
             _configuration = configuration;
-        }
 
         public string GenerateToken(ApplicationUser user)
         {
@@ -33,14 +31,13 @@
 
             var tokenDescriptor = new SecurityTokenDescriptor
             {
-                Subject = new ClaimsIdentity(new Claim[]
-                {
-                    new Claim(ClaimTypes.NameIdentifier, user.Id),
-                    new Claim(ClaimTypes.Name, user.UserName),
-                    new Claim(JwtRegisteredClaimNames.Iss, issuer),
-                    new Claim(JwtRegisteredClaimNames.Aud, audience),
-                    new Claim(ClaimTypes.Role, "Administrator") // for example
-                }),
+                Subject = new ClaimsIdentity([
+                    new(ClaimTypes.NameIdentifier, user.Id),
+                    new(ClaimTypes.Name, user.UserName!),
+                    new(JwtRegisteredClaimNames.Iss, issuer),
+                    new(JwtRegisteredClaimNames.Aud, audience),
+                    new(ClaimTypes.Role, "Administrator") // for example
+                ]),
                 Expires = DateTime.UtcNow.AddMinutes(60),
                 SigningCredentials = new SigningCredentials(new RsaSecurityKey(rsa), SecurityAlgorithms.RsaSha256)
             };
@@ -49,10 +46,10 @@
             return tokenHandler.WriteToken(token);
         }
 
-        public TokenValidationResult ValidateToken(string token, [MaybeNullWhen(false)] out ClaimsPrincipal claimsPrincipal)
+        public TokenValidationResult ValidateToken(string token, [MaybeNullWhen(false)] out ClaimsPrincipal? claimsPrincipal)
         {
-            var publicKey = _configuration["Jwt:PublicKey"] ?? throw new ArgumentNullException("'Jwt:PublicKey' configuration not found. Update your secrets.json.")
-                var publicKeyBytes = Convert.FromBase64String(publicKey);
+            var publicKey = _configuration["Jwt:PublicKey"] ?? throw new ArgumentNullException("'Jwt:PublicKey' configuration not found. Update your secrets.json.");
+            var publicKeyBytes = Convert.FromBase64String(publicKey);
 
             var tokenHandler = new JwtSecurityTokenHandler();
 
@@ -70,12 +67,11 @@
                 IssuerSigningKey = new RsaSecurityKey(rsa)
             };
 
-            claimsPrincipal = null;
-            SecurityToken validatedToken;
+            claimsPrincipal = default;
 
             try
             {
-                claimsPrincipal = tokenHandler.ValidateToken(token, validationParameters, out validatedToken);
+                claimsPrincipal = tokenHandler.ValidateToken(token, validationParameters, out _);
                 return TokenValidationResult.Valid;
             }
             catch (SecurityTokenExpiredException)

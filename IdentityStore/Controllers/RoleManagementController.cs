@@ -1,12 +1,12 @@
 ﻿namespace IdentityStore.Controllers
 {
     using IdentityStore.Models;
-    using IdentityStore.Services;
     using Microsoft.AspNetCore.Authorization;
     using Microsoft.AspNetCore.Identity;
     using Microsoft.AspNetCore.Mvc;
     using System.Threading.Tasks;
     using System.IdentityModel.Tokens.Jwt;
+    using IdentityStore.Interfaces;
 
     [Route("api/[controller]")]
     [ApiController]

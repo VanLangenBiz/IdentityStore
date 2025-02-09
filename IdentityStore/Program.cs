@@ -1,5 +1,6 @@
 
 using IdentityStore.Data;
+using IdentityStore.Interfaces;
 using IdentityStore.Models;
 using IdentityStore.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
