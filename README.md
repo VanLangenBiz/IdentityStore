@@ -16,4 +16,4 @@ There is a static functie `private static void GenerateKeys()` to easy generate 
 -  "RSA:PrivateKey": "[privatekey]",
 -  "RSA:PublicKey": "[publickey]"
 
-To store values, you can use: dotnet user-secrets set "RSA:PrivateKey" "[privatekey]"
+To store values, you can use: `dotnet user-secrets set "RSA:PrivateKey" "[privatekey]"`
