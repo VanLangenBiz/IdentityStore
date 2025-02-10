@@ -51,8 +51,6 @@
             var publicKey = _configuration["Jwt:PublicKey"] ?? throw new ArgumentNullException("'Jwt:PublicKey' configuration not found. Update your secrets.json.");
             var publicKeyBytes = Convert.FromBase64String(publicKey);
 
-            var tokenHandler = new JwtSecurityTokenHandler();
-
             var rsa = RSA.Create();
             rsa.ImportRSAPublicKey(publicKeyBytes, out _);
 
@@ -71,6 +69,7 @@
 
             try
             {
+                var tokenHandler = new JwtSecurityTokenHandler();
                 claimsPrincipal = tokenHandler.ValidateToken(token, validationParameters, out _);
                 return TokenValidationResult.Valid;
             }
