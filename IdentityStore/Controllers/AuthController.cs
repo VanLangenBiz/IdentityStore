@@ -1,12 +1,12 @@
-﻿namespace IdentityStore.Controllers
-{
-    using IdentityStore.Models;
-    using IdentityStore.Services;
-    using Microsoft.AspNetCore.Identity;
-    using Microsoft.AspNetCore.Mvc;
-    using Microsoft.Extensions.Configuration;
-    using System.Threading.Tasks;
+﻿using IdentityStore.Models;
+using IdentityStore.Services;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
+using System.Threading.Tasks;
 
+namespace IdentityStore.Controllers
+{
     [ApiController]
     [Route("api/[controller]")]
     public class AuthController : ControllerBase
@@ -25,7 +25,15 @@
         [HttpPost("register")]
         public async Task<IActionResult> Register(UserRegistrationDto dto)
         {
-            var user = new ApplicationUser { UserName = dto.Username, Email = dto.Email, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
+            var utcNow = DateTime.UtcNow;
+            var user = new ApplicationUser
+            {
+                UserName = dto.Username,
+                Email = dto.Email,
+                CreatedAt = utcNow,
+                UpdatedAt = utcNow
+            };
+
             var result = await _userManager.CreateAsync(user, dto.Password);
             if (!result.Succeeded)
             {
@@ -54,6 +62,6 @@
             return Ok(new { token });
         }
 
-      
+
     }
 }

@@ -1,12 +1,16 @@
-
 using IdentityStore.Data;
 using IdentityStore.Models;
 using IdentityStore.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Server.Kestrel.Https;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using PwrCsr2;
+using System.Net;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
@@ -48,12 +52,47 @@ namespace IdentityStore
             }
         }
 
+        static string ExportPrivateKeyToPem(RSA rsa)
+        {
+            var key = rsa.ExportPkcs8PrivateKey();
+            return "-----BEGIN PRIVATE KEY-----\n"
+                + Convert.ToBase64String(key, Base64FormattingOptions.InsertLineBreaks)
+                + "\n-----END PRIVATE KEY-----";
+        }
+
+        static void CheckKeyMatch(X509Certificate2 cert, RSA privateKey)
+        {
+            var certPub = cert.GetRSAPublicKey().ExportRSAPublicKey();
+            var privPub = privateKey.ExportRSAPublicKey();
+
+            bool match = certPub.SequenceEqual(privPub);
+
+            Console.WriteLine("PublicKey match? " + match);
+        }
+
+
         public static void Main(string[] args)
         {
             // ## Use this method to generate new RSA keys. Save them in the secrets.json
-            // GenerateKeys();
+            //GenerateKeys();
 
             var builder = WebApplication.CreateBuilder(args);
+
+            var newCert = SetupCert();
+
+            // HTTPS stuff
+            builder.WebHost.ConfigureKestrel((context, options) =>
+            {
+                options.ConfigureHttpsDefaults(options => options.ClientCertificateMode = ClientCertificateMode.RequireCertificate);
+
+                // HTTPS listener op jouw Visual Studio HTTPS-port
+                options.ListenAnyIP(7048, listen =>
+                {
+
+                    listen.UseHttps(newCert);
+                });
+            });
+
 
             // Add services to the container.
             builder.Services.AddTransient<TokenService>(); // Voeg deze regel toe
@@ -134,6 +173,8 @@ namespace IdentityStore
                 });
             });
 
+
+
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
@@ -152,6 +193,108 @@ namespace IdentityStore
             app.MapControllers();
 
             app.Run();
+        }
+
+        private static X509Certificate2 SetupCert()
+        {
+            var dataRoot = Environment.GetEnvironmentVariable("PWRDATAROOT")
+                         ?? throw new InvalidOperationException("PWRDATAROOT env var ontbreekt.");
+            var certPath = Path.Combine(dataRoot, "Certificates");
+
+            if (!Directory.Exists(certPath))
+                Directory.CreateDirectory(certPath);
+
+            // AES-key uit configuratie (appsettings, secrets, env var)
+            var encPwdEnvName = "PWR_TLS_PFX_PWD_ENC";
+            byte[] pwdBytes;
+            string pfxPassword;
+
+            // 1) TPM key check (alleen naam + provider)
+            CertHelpers.EnsureTpmKeyExists();
+
+            var encPwdBase64 = Environment.GetEnvironmentVariable(encPwdEnvName, EnvironmentVariableTarget.User);
+
+            if (string.IsNullOrEmpty(encPwdBase64))
+            {
+                // nieuw random password
+                pwdBytes = CertHelpers.GenerateRandomChars();
+                pfxPassword = Convert.ToBase64String(pwdBytes); // string voor PFX
+
+                var encPwdBytes = CertHelpers.TpmEncrypt(pwdBytes);
+                encPwdBase64 = Convert.ToBase64String(encPwdBytes);
+
+                Environment.SetEnvironmentVariable(encPwdEnvName, encPwdBase64, EnvironmentVariableTarget.User);
+            }
+            else
+            {
+                var encPwdBytes = Convert.FromBase64String(encPwdBase64);
+                pwdBytes = CertHelpers.TpmDecrypt(encPwdBytes);
+                pfxPassword = Convert.ToBase64String(pwdBytes);
+            }
+
+
+            // AES key voor private key encryptie = pwdBytes
+            var privKeyEncPath = Path.Combine(certPath, "private.key.pem");
+
+            var rsa = PrivateKeyHelper.ReadEncryptedPrivate(privKeyEncPath, pwdBytes);
+
+            var certFilename = Path.Combine(certPath, "Offline3.cer");
+
+            // Leaf certificaat lezen
+            string certPem = File.ReadAllText(certFilename);
+
+            // Private key + cert combineren in één X509 object
+            //var cert = X509Certificate2.CreateFromPem(certPem, ExportPrivateKeyToPem(rsa));
+
+            var leaf = X509Certificate2.CreateFromPem(certPem, ExportPrivateKeyToPem(rsa));
+
+            CheckKeyMatch(leaf, rsa);
+
+            Console.WriteLine("Subject: " + leaf.Subject);
+            Console.WriteLine("Thumbprint: " + leaf.Thumbprint);
+            Console.WriteLine("Has private key: " + leaf.HasPrivateKey);
+
+
+
+            var chainPem = File.ReadAllText(Path.Combine(certPath, "Offline3-chain.cer"));
+            var chainCerts = new X509Certificate2Collection();
+
+            chainCerts.Add(leaf);
+
+            foreach (var block in chainPem.Split("-----END CERTIFICATE-----"))
+            {
+                if (block.Contains("BEGIN CERTIFICATE"))
+                {
+                    var pem = block + "-----END CERTIFICATE-----";
+                    chainCerts.Add(X509Certificate2.CreateFromPem(pem));
+                }
+            }
+
+            var pfx = chainCerts.Export(X509ContentType.Pkcs12, null); // zonder wachtwoord (toch in-mem)
+
+            Pkcs12LoaderLimits limits = new Pkcs12LoaderLimits()
+            {
+                PreserveStorageProvider = false // true => seeing access denied; false => works
+            };
+
+
+            var newCert = X509CertificateLoader.LoadPkcs12(
+                data: pfx,
+                password: string.Empty,
+                loaderLimits: limits);
+
+            //var pfxBytes = chainCerts.Export(X509ContentType.Pkcs12, string.Empty);
+            //                    var pfxBytes = leaf.Export(X509ContentType.Pkcs12, string.Empty);
+
+            //var newCert = new X509Certificate2(
+            //    pfxBytes,
+            //    (string?)string.Empty,
+            //    X509KeyStorageFlags.MachineKeySet |
+            //    X509KeyStorageFlags.EphemeralKeySet |
+            //    X509KeyStorageFlags.Exportable);
+            return newCert;
+
+
         }
     }
 }
