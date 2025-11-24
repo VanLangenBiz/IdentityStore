@@ -1,4 +1,5 @@
 ﻿using IdentityStore.Data;
+using IdentityStore.Interfaces;
 using IdentityStore.Models;
 using IdentityStore.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -39,7 +40,7 @@ namespace IdentityStore
             // Save these keys 
             using (var rsa = new RSACryptoServiceProvider(2048))
             {
-                // Verkrijg de privésleutel en openbare sleutel als Base64-strings
+                // Verkrijg de priv�sleutel en openbare sleutel als Base64-strings
                 string privateKey = Convert.ToBase64String(rsa.ExportRSAPrivateKey());
                 string publicKey = Convert.ToBase64String(rsa.ExportRSAPublicKey());
 
@@ -246,7 +247,7 @@ namespace IdentityStore
             // Leaf certificaat lezen
             string certPem = File.ReadAllText(certFilename);
 
-            // Private key + cert combineren in één X509 object
+            // Private key + cert combineren in ��n X509 object
             var leaf = X509Certificate2.CreateFromPem(certPem, ExportPrivateKeyToPem(rsa));
 
             CheckKeyMatch(leaf, rsa);

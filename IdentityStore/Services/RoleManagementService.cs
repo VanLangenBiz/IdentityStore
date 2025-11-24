@@ -1,5 +1,6 @@
 ﻿namespace IdentityStore.Services
 {
+    using IdentityStore.Interfaces;
     using IdentityStore.Models;
     using Microsoft.AspNetCore.Identity;
     using System;

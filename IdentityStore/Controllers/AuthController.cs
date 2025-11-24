@@ -46,6 +46,9 @@ namespace IdentityStore.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login(UserLoginDto dto)
         {
+            if (string.IsNullOrEmpty(dto.Username))
+                return Unauthorized();
+
             var user = await _userManager.FindByNameAsync(dto.Username);
             if (user == null)
             {
