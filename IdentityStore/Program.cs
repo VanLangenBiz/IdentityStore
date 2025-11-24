@@ -1,4 +1,4 @@
-using IdentityStore.Data;
+ï»¿using IdentityStore.Data;
 using IdentityStore.Models;
 using IdentityStore.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -39,7 +39,7 @@ namespace IdentityStore
             // Save these keys 
             using (var rsa = new RSACryptoServiceProvider(2048))
             {
-                // Verkrijg de privésleutel en openbare sleutel als Base64-strings
+                // Verkrijg de privÃ©sleutel en openbare sleutel als Base64-strings
                 string privateKey = Convert.ToBase64String(rsa.ExportRSAPrivateKey());
                 string publicKey = Convert.ToBase64String(rsa.ExportRSAPublicKey());
 
@@ -83,12 +83,11 @@ namespace IdentityStore
             // HTTPS stuff
             builder.WebHost.ConfigureKestrel((context, options) =>
             {
-                options.ConfigureHttpsDefaults(options => options.ClientCertificateMode = ClientCertificateMode.RequireCertificate);
+                //options.ConfigureHttpsDefaults(options => options.ClientCertificateMode = ClientCertificateMode.RequireCertificate);
 
                 // HTTPS listener op jouw Visual Studio HTTPS-port
                 options.ListenAnyIP(7048, listen =>
                 {
-
                     listen.UseHttps(newCert);
                 });
             });
@@ -195,6 +194,10 @@ namespace IdentityStore
             app.Run();
         }
 
+        private const string cert = "JeroenLPT.cer";
+        private const string chain = "JeroenLPT-chain.cer";
+        //private const string caCert = "PWR Machines CA-ca.cer";
+
         private static X509Certificate2 SetupCert()
         {
             var dataRoot = Environment.GetEnvironmentVariable("PWRDATAROOT")
@@ -238,14 +241,12 @@ namespace IdentityStore
 
             var rsa = PrivateKeyHelper.ReadEncryptedPrivate(privKeyEncPath, pwdBytes);
 
-            var certFilename = Path.Combine(certPath, "Offline3.cer");
+            var certFilename = Path.Combine(certPath, cert);
 
             // Leaf certificaat lezen
             string certPem = File.ReadAllText(certFilename);
 
-            // Private key + cert combineren in één X509 object
-            //var cert = X509Certificate2.CreateFromPem(certPem, ExportPrivateKeyToPem(rsa));
-
+            // Private key + cert combineren in Ã©Ã©n X509 object
             var leaf = X509Certificate2.CreateFromPem(certPem, ExportPrivateKeyToPem(rsa));
 
             CheckKeyMatch(leaf, rsa);
@@ -256,8 +257,9 @@ namespace IdentityStore
 
 
 
-            var chainPem = File.ReadAllText(Path.Combine(certPath, "Offline3-chain.cer"));
+            var chainPem = File.ReadAllText(Path.Combine(certPath, chain));
             var chainCerts = new X509Certificate2Collection();
+
 
             chainCerts.Add(leaf);
 
@@ -270,31 +272,24 @@ namespace IdentityStore
                 }
             }
 
-            var pfx = chainCerts.Export(X509ContentType.Pkcs12, null); // zonder wachtwoord (toch in-mem)
-
-            Pkcs12LoaderLimits limits = new Pkcs12LoaderLimits()
-            {
-                PreserveStorageProvider = false // true => seeing access denied; false => works
-            };
-
+            var pfxData = chainCerts.Export(X509ContentType.Pkcs12, null); // zonder wachtwoord (toch in-mem)
 
             var newCert = X509CertificateLoader.LoadPkcs12(
-                data: pfx,
-                password: string.Empty,
-                loaderLimits: limits);
+                data: pfxData,
+                password: string.Empty
+                );
 
-            //var pfxBytes = chainCerts.Export(X509ContentType.Pkcs12, string.Empty);
-            //                    var pfxBytes = leaf.Export(X509ContentType.Pkcs12, string.Empty);
-
-            //var newCert = new X509Certificate2(
-            //    pfxBytes,
-            //    (string?)string.Empty,
-            //    X509KeyStorageFlags.MachineKeySet |
-            //    X509KeyStorageFlags.EphemeralKeySet |
-            //    X509KeyStorageFlags.Exportable);
             return newCert;
+
+            //PS C:\programdata\PWR Pack\Certificates> certutil -verify -user -urlfetch jeroenlpt.cer
+
+            // certutil - addstore Root "PWR Root CA.cer"
+            // certutil -addstore -user CA "PWR Machines CA.cer"
+
 
 
         }
+
+
     }
 }
